@@ -3,7 +3,7 @@ title: "RTK Query で取得したデータをキャッシュ前に操作した�
 emoji: "🔥"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ['react','redux','frontend']
-published: false
+published: true
 ---
 
 # 結論
@@ -14,7 +14,7 @@ https://redux-toolkit.js.org/rtk-query/usage/customizing-queries#customizing-que
 `useQuery` や `useMutation` のレスポンスを操作するための機能。
 レスポンスが返ってきたタイミングで呼び出され、操作後の返り値をキャッシュデータとして用いることができる。
 
-デフォルトだと、取得した値をそのまま返している。（各引数の詳細については[こちら](https://redux-toolkit.js.org/rtk-query/usage/customizing-queries#customizing-query-responses-with-transformresponse)を参照）
+デフォルトだと取得した値をそのまま返している。（各引数の詳細については[こちら](https://redux-toolkit.js.org/rtk-query/usage/customizing-queries#customizing-query-responses-with-transformresponse)を参照）
 ```js
 function defaultTransformResponse(
   baseQueryReturnValue: unknown,
@@ -24,7 +24,7 @@ function defaultTransformResponse(
   return baseQueryReturnValue
 }
 ```
-利用する際は、下記のように変換する処理を書いていけば良い
+利用する際は、 `endpoints` の各処理に渡すオブジェクト内で下記のように書けば　OK
 ```js
 export const someApi = createApi({
   reducerPath: 'someApi',
@@ -32,19 +32,19 @@ export const someApi = createApi({
   endpoints: (builder) => ({
     getItemById: builder.query<someResponse, string>({
       query: (id) => `item/${id}`,
+      transformResponse:(response:someResponse) => {
+        // 処理は適当
+        return response.toUpperCase();
+      }
     }),
   }),
-  transformResponse:(response:someResponse) => {
-    // 処理は適当
-    return response.toUpperCase();
-  }
 })
 ```
 
 # 利用シーン
 ### データの正規化
-Redux のドキュメントでは、IDを用いて簡単にアイテムを検索可能にするために、データを正規化して store に格納することを推奨している。Redux Toolkit では正規化のための `createEntityAdaptor` という API も準備されている。
-しかし、RTK Query を使ってキャッシュデータを管理するのであれば、 [正規化する必要性が低くなる](https://redux-toolkit.js.org/rtk-query/usage/cache-behavior#no-normalized-or-de-duplicated-cache)。
+Redux のドキュメントではデータを正規化して store に格納することを推奨している。また、Redux Toolkit では正規化のための `createEntityAdaptor` という API も準備されている。
+しかし、RTK Query を使ってキャッシュデータを管理するのであれば [正規化する必要性が低くなる](https://redux-toolkit.js.org/rtk-query/usage/cache-behavior#no-normalized-or-de-duplicated-cache)。
 とはいえ、「RTK Query を利用しているけれどもデータを正規化しておきたい」という需要もあるかもしれない。その場合は `transformResponse` 内で `createEntityAdaptor` を用いることができる。
 
 ### 深くネストしたデータを取り出す
@@ -78,7 +78,7 @@ transformResponse: (response: Posts, meta, arg) => {
 読んで字のごとく。
 
 # 個人的に嬉しいポイント
-Redux にも通じることだが、「処理を書く場所が決められている」ことで迷いが無くなるのはなかなか嬉しい。
+Redux にも通じることだが、「処理を書く場所が決められている」ことにより迷いが無くなる点は嬉しい。
 特にチームで開発を進める場合、「個々人が適当と思う場所に処理を書く」という事態を防ぎやすくなるのはありがたい。（もちろん完全に防げるわけではないが）
 
 
